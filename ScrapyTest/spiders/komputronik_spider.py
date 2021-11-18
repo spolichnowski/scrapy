@@ -1,4 +1,6 @@
 import scrapy
+from ..items import SmartphoneItem
+from scrapy.loader import ItemLoader
 
 
 class SmartPhoneSpider(scrapy.Spider):
@@ -14,15 +16,12 @@ class SmartPhoneSpider(scrapy.Spider):
         yield from response.follow_all(pagination_links, self.parse)
 
     def parse_smartphone(self, response):
-        def extract_with_css(query):
-            return response.css(query).get(default="").strip()
 
-        yield {
-            "name": extract_with_css("section.p-inner-name h1::text"),
-            "price": extract_with_css("span.price span.proper::text"),
-            "processor": response.xpath(
-                "//*[contains(text(), 'Zastosowany procesor')]/following::td/text()"
-            )
-            .get(default="")
-            .strip(),
-        }
+        load = ItemLoader(item=SmartphoneItem(), response=response)
+        load.add_css("smt_name", "section.p-inner-name h1::text"),
+        load.add_css("price", "span.price span.proper::text"),
+        load.add_xpath(
+            "processor",
+            "//*[@id='p-content-specification']/div[2]/div/div[5]/table/tbody/tr[1]/td",
+        ),
+        yield load.load_item()
